@@ -1,0 +1,24 @@
+---
+- name: Install redis-sentinel
+  yum:
+    name: redis
+    enablerepo: remi,epel
+    state: present
+  notify: Ensure redis is running
+
+- name: Copy and permission redis file config
+  template:
+    src: redis-sentinel.j2
+    dest: /etc/redis-sentinel.conf
+    owner: redis
+    group: redis
+
+- name: Modify user redis
+  user:
+    name: redis
+    groups: root
+
+- name: Noti hieult on Telegram
+  telegram:  token=bot181958319:AAHj1zsUiV23tMlkJuM6hrxhfMs7Y2k-JwM
+    chat_id=51588744
+    msg='{{ inventory_hostname }} - Redis-sentinel - Ansible role finished'

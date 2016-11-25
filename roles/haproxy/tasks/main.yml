@@ -1,0 +1,20 @@
+---
+- name: Install HAProxy
+  yum:
+    name: haproxy
+    state: present
+  notify: Ensure HAProxy is running
+
+- name: Copy HAProxy file config
+  template:
+    src: haproxy.j2
+    dest: /etc/haproxy/haproxy.cfg
+  notify: Ensure HAProxy is running
+
+- name: Flush handler
+  meta: flush_handlers
+
+- name: Noti hieult on Telegram
+  telegram:  token=bot181958319:AAHj1zsUiV23tMlkJuM6hrxhfMs7Y2k-JwM
+    chat_id=51588744
+    msg='{{ inventory_hostname }} - HAproxy - Ansible role finished'

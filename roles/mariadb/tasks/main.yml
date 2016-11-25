@@ -1,0 +1,101 @@
+---
+- name: Add repo to install MariaDB
+  template:
+    src: mariadb.j2
+    dest: /etc/yum.repos.d/mariadb.repo
+
+- name: Copy GPG key for MariaDB
+  template:
+    src: RPM-GPG-KEY-MariaDB
+    dest: /etc/pki/rpm-gpg
+
+- name: Install MariaDB-server and MariaDB-client
+  yum:
+    name: "{{ item }}"
+    enablerepo: mariadb
+    state: present
+  notify: Ensure mysql is running
+  with_items:
+    - MariaDB-server
+    - MariaDB-client
+
+- name: Force handler
+  meta: flush_handlers
+
+- name: Install MySQL-python
+  yum:
+    name: MySQL-python
+    state: present
+
+- name: Set root user password
+  mysql_user:
+    name: root
+    host: "{{ item }}"
+    password: "{{ mysql_root_passwd }}"
+    check_implicit_admin: yes
+    login_user: "{{ mysql_root_user }}"
+    login_password: "{{ mysql_root_passwd }}"
+    state: present
+  with_items:
+    - "{{ inventory_hostname }}"
+    - localhost
+    - 127.0.0.1
+    - ::1
+
+- name: Ensure anonymous users are not in the database
+  mysql_user:
+    name: ''
+    host: "{{ item }}"
+    login_user: "{{ mysql_root_user }}"
+    login_password: "{{ mysql_root_passwd }}"
+    state: absent
+  with_items:
+    - "{{ inventory_hostname }}"
+    - localhost
+
+- name: Remove test database
+  mysql_db:
+    name: test
+    login_host: localhost
+    login_user: "{{ mysql_root_user }}"
+    login_password: "{{ mysql_root_passwd }}"
+    state: absent
+
+- name: Set root access remote
+  mysql_user:
+    name: root
+    host: "%"
+    login_user: "{{ mysql_root_user }}"
+    login_password: "{{ mysql_root_passwd }}"
+    state: present
+  notify: Stop service mysql
+
+- name: Force stop mysql
+  meta: flush_handlers
+
+- name: Copy file config MariaDB Cluster
+  template:
+    src: server.j2
+    dest: /etc/my.cnf.d/server.cnf
+
+- name: Start new cluster mariadb
+  service:
+    name: mysql
+    arguments: --wsrep-new-cluster
+    state: started
+    enabled: yes
+  run_once: true
+  delegate_to: "{{ db1_hostname }}"
+
+- name: Start mariadb
+  service:
+    name: mysql
+    state: started
+    enabled: yes
+  run_once: true
+  delegate_to: "{{ db2_hostname }}"
+
+- name: Noti hieult on Telegram
+  telegram:  token=bot181958319:AAHj1zsUiV23tMlkJuM6hrxhfMs7Y2k-JwM
+    chat_id=51588744
+    msg='{{ inventory_hostname }} - MariaDB - Ansible role finished'

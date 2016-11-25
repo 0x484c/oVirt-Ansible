@@ -1,0 +1,39 @@
+---
+- name: Edit modprobe ip_conntrack
+  modprobe:
+    name: nf_conntrack
+    state: present
+  notify: Add nf_conntrack to /etc/rc.local
+
+- name: Configuration sysctl
+  template: src=sysctl dest=/etc/sysctl.conf
+  notify: Reload sysctl
+
+- name: Configuration ulimit soft
+  pam_limits:
+    domain: '*'
+    limit_type: soft
+    limit_item: nofile
+    value: 128000
+
+- name: Configuration ulimit hard
+  pam_limits:
+    domain: '*'
+    limit_type: hard
+    limit_item: nofile
+    value: 128000
+
+- name: Install NGINX
+  yum: name=nginx enablerepo=remi state=present
+
+- name: Copy NGINX configuration
+  template: src=default.conf dest=/etc/nginx/conf.d/default.conf
+  notify: Restart NGINX
+
+- name: Flush handler
+  meta: flush_handlers
+
+- name: Noti hieult on Telegram
+  telegram:  token=bot181958319:AAHj1zsUiV23tMlkJuM6hrxhfMs7Y2k-JwM
+    chat_id=51588744
+    msg='{{ inventory_hostname }} - NGINX - Ansible role finished'

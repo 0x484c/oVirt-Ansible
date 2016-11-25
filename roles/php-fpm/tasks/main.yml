@@ -1,0 +1,63 @@
+---
+- name: Install PHP-FPM
+  yum:
+    name: "{{ item }}"
+    enablerepo: remi-php56
+    state: present
+  with_items:
+    - php-odbc
+    - php-bcmath
+    - php-fpm
+    - php-xml
+    - php-pecl-igbinary
+    - php-mcrypt
+    - php-pear-Auth-SASL
+    - php-pear-Net-Socket
+    - php-imap
+    - php-pecl-mysqlnd-qc
+    - php-ldap
+    - php-soap
+    - php-pecl-apcu
+    - php-opcache
+    - php-pecl-zip
+    - php-common
+    - php-gd
+    - php-mysqlnd
+    - php-cli
+    - php-pear
+    - php-pecl-redis
+    - php-mbstring
+    - php-devel
+    - php-pear-Net-SMTP
+    - php-xmlrpc
+    - php-pecl-mysqlnd-ms
+    - php-pecl-jsonc
+    - php-pdo
+    - php-process
+    - php-pecl-jsonc-devel
+  notify: Restart PHP-FPM
+
+- name: Edit cgi.fix_pathinfo
+  lineinfile:
+    dest: "/etc/php.ini"
+    regexp: "^;cgi.fix"
+    line: "cgi.fix_pathinfo=0"
+  notify: Restart PHP-FPM
+
+- name: Edit date.timezone
+  lineinfile:
+    dest: "/etc/php.ini"
+    regexp: "^;date.timezone"
+    line: 'date.timezone = "Asia/Ho_Chi_Minh"'
+  notify: Restart PHP-FPM
+
+- name: Coppy file www.conf
+  template:
+    src: www.conf
+    dest: /etc/php-fpm.d/www.conf
+  notify: Restart PHP-FPM
+
+- name: Noti hieult on Telegram
+  telegram:  token=bot181958319:AAHj1zsUiV23tMlkJuM6hrxhfMs7Y2k-JwM
+    chat_id=51588744
+    msg='{{ inventory_hostname }} - PHP-FPM - Ansible role finished'

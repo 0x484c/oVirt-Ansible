@@ -1,0 +1,102 @@
+---
+- name: Install libselinux-python
+  yum: name=libselinux-python state=present
+
+- name: Install epel-release repository
+  yum:
+    name: epel-release
+    state: present
+
+- name: Install remi repository
+  get_url:
+    url: https://rpms.remirepo.net/enterprise/remi.repo
+    dest: /etc/yum.repos.d/
+    mode: 0440
+
+- name: Setup SSH port
+  lineinfile:
+    dest: "/etc/ssh/sshd_config"
+    regexp: "^Port"
+    line: 'Port "{{ ansible_ssh_port }}"'
+  notify: Restart sshd
+
+- name: Flush handler
+  meta: flush_handlers
+
+- name: Config iptables
+  template:
+    src: iptables.j2
+    dest: /etc/sysconfig/iptables
+  notify: Start iptables on boot
+
+- name: Change timezone
+  file:
+    src: /usr/share/zoneinfo/Asia/Ho_Chi_Minh
+    dest: /etc/localtime
+    state: link
+    force: yes
+
+- name: Remove localtime
+  file: path=/etc/localtime state=absent
+
+- name: Synchronizing time with NTP server
+  yum:
+    name: ntp
+    disablerepo: epel
+    state: present
+  notify: Restart and set NTP auto start on boot
+
+- name: Install SNMP
+  yum:
+    name: net-snmp
+    state: present
+    disablerepo: epel
+
+- name: Config SNMP
+  template: src=snmpd dest=/etc/snmp/snmpd.conf
+  notify: Restart and set SNMP auto start on boot
+
+- name: Update OpenSSL
+  yum:
+    name: openssl
+    state: latest
+    disablerepo: epel
+
+- name: Update bash
+  yum:
+    name: bash
+    state: latest
+    disablerepo: epel
+
+- name: Update kernel
+  yum:
+    name: kernel
+    state: latest
+    disablerepo: epel
+
+- name: Disabled selinux
+  selinux: state=disabled
+  notify: Waiting for server to come back
+
+- name: Edit IP address private NIC
+  template:
+    src: ifcfg-eth1.j2
+    dest: /etc/sysconfig/network-scripts/ifcfg-eth1
+#  notify: Restart network service
+
+- name: Copy host file
+  template:
+    src: hosts.j2
+    dest: /etc/hosts
+  notify: Reboot server
+
+- name: Change hostname
+  template:
+    src: network.j2
+    dest: /etc/sysconfig/network
+  notify: Reboot server
+
+- name: Noti hieult on Telegram
+  telegram:  token=bot181958319:AAHj1zsUiV23tMlkJuM6hrxhfMs7Y2k-JwM
+    chat_id=51588744
+    msg='{{ inventory_hostname }} - Common - Ansible role finished'

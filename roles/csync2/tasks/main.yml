@@ -1,0 +1,51 @@
+---
+- name: Create a directory to contain the source code
+  file:
+    path: /server/webdev/www/{{ domain_of_project }}
+    state: directory
+
+- name: Install required module
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+      - lua
+      - lua-devel
+      - pkgconfig
+      - gcc
+      - asciidoc
+      - lsyncd
+      - csync2
+  notify: Stop lsyncd
+
+- name: Copy file configure for lsyncd
+  template:
+    src: lsyncd.j2
+    dest: /etc/lsyncd.conf
+
+- name: Copy file config csync2
+  template:
+    src: csync2
+    dest: /etc/xinetd.d/csync2
+
+- name: Copy file configure csync2.key for csync2
+  template:
+    src: csync2.key
+    dest: /etc/csync2/csync2.key
+
+- name: Copy file configure csync2_web1.cfg for csync2
+  template:
+    src: csync2_web1.j2
+    dest: /etc/csync2/csync2_web1.cfg
+  notify: Restart csync2
+
+- name: Copy file configure csync2_web2.cfg for csync2
+  template:
+    src: csync2_web2.j2
+    dest: /etc/csync2/csync2_web2.cfg
+  notify: Start lsyncd
+
+- name: Noti hieult on Telegram
+  telegram:  token=bot181958319:AAHj1zsUiV23tMlkJuM6hrxhfMs7Y2k-JwM
+    chat_id=51588744
+    msg='{{ inventory_hostname }} - Csync2 - Ansible role finished'

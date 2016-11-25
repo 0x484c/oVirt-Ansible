@@ -1,0 +1,19 @@
+---
+- name: Stop lsyncd
+  service:
+    name: lsyncd
+    state: stopped
+
+- name: Restart csync2
+  service:
+    name: xinetd
+    state: started
+    enabled: yes
+    runlevel: 235
+
+- name: Start lsyncd
+  service:
+    name: lsyncd
+    state: started
+    enabled: yes
+    runlevel: 235

@@ -1,0 +1,12 @@
+---
+- name: Add nf_conntrack to /etc/rc.local
+  shell: echo “modprobe nf_conntrack”>> /etc/rc.local
+
+- name: Reload sysctl
+  shell: sysctl -p
+
+- name: Restart NGINX
+  service:
+    name: nginx
+    state: started
+    enabled: yes

@@ -1,0 +1,84 @@
+global
+    log         127.0.0.1 local0 info
+    chroot      /var/lib/haproxy
+    pidfile     /var/run/haproxy.pid
+    user        haproxy
+    group       haproxy
+    daemon
+    maxconn     64000
+    stats socket /var/lib/haproxy/stats
+
+defaults
+    mode                    http
+    option                  httplog
+    log                     global
+    option                  dontlognull
+    option http-server-close
+    option forwardfor       except 127.0.0.0/8
+    option                  redispatch
+    retries                 3
+    timeout http-request    200
+    timeout queue           100
+    timeout connect         5000
+    timeout client          100000
+    timeout server          100000
+    timeout http-keep-alive 200
+    timeout check           50
+    maxconn                 64000
+    errorfile 408 /dev/null
+frontend ft_web
+    bind {{ pub_v_ipadd }}:80
+    default_backend    bk_web
+    reqadd X-Forwarded-Proto:\ http
+
+backend bk_web
+    balance            roundrobin
+    server             {{ web1_hostname }} {{ pri_web1_ipadd }}:80 weight 1 maxconn 32000 cookie {{ web1_hostname }} check
+    server             {{ web2_hostname }} {{ pri_web2_ipadd }}:80 weight 1 maxconn 32000 cookie {{ web2_hostname }} check
+    #option  httpclose
+    option  forceclose
+    option forwardfor
+#header X-Client
+    cookie web-farm insert
+    #http-request add-header X-Client-IP %[src]
+
+listen mariadb-cluster
+    bind {{ pri_v_ipadd }}:3306
+    mode tcp
+    option tcpka
+    option tcplog
+    #option mysql-check user haproxy
+    balance roundrobin
+    server {{ db1_hostname }} {{ pri_db1_ipadd }}:3307 check
+    server {{ db2_hostname }} {{ pri_db2_ipadd }}:3307 check
+
+frontend ft_redis
+    mode tcp
+    option tcpka
+    option tcplog
+    bind {{ pri_v_ipadd }}:6379 name redis
+    default_backend bk_redis
+
+backend bk_redis
+    mode tcp
+    option tcpka
+    option tcplog
+    option tcp-check
+    tcp-check connect
+    tcp-check send PING\r\n
+    tcp-check expect string +PONG
+    tcp-check send info\ replication\r\n
+    tcp-check expect string role:master
+    tcp-check send QUIT\r\n
+    tcp-check expect string +OK
+    server redis1 {{ pri_db1_ipadd }}:6379 check inter 1s
+    server redis2 {{ pri_db2_ipadd }}:6379 check inter 1s
+
+listen stats {{ pub_v_ipadd }}:8081
+    stats enable
+    stats hide-version
+    stats uri /stats
+    stats realm Haproxy\ Statistics
+    stats auth {{ haproxy_user }}:{{ haproxy_password }}
+    stats show-node
+    stats refresh 60s

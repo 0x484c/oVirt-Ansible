@@ -1,0 +1,35 @@
+ipgw: 192.168.32.1
+
+ansible_become: true
+become_user: root
+ansible_ssh_port: 22
+ansible_ssh_user: root
+ansible_ssh_pass: 123456
+
+configured_ssh_port: 2012
+
+domain_of_project: cuuam.gosu.vn
+haproxy_user: admin
+haproxy_password: 123qwe
+
+keepalived_password: 123qwe
+
+pri_v_ipadd: 172.168.32.160
+pri_web1_ipadd: 172.168.32.161
+pri_web2_ipadd: 172.168.32.162
+pri_db1_ipadd: 172.168.32.163
+pri_db2_ipadd: 172.168.32.164
+
+pub_v_ipadd: 192.168.32.60
+pub_web1_ipadd: 192.168.32.61
+pub_web2_ipadd: 192.168.32.62
+pub_db1_ipadd: 192.168.32.63
+pub_db2_ipadd: 192.168.32.64
+
+mysql_root_user: root
+mysql_root_passwd: "!QAZxdr5"
+
+web1_hostname: web1
+web2_hostname: web2
+db1_hostname: db1
+db2_hostname: db2

@@ -1,0 +1,24 @@
+---
+- name: Install redis
+  yum:
+    name: redis
+    enablerepo: remi,epel
+    state: present
+
+- name: Copy and permission redis file config
+  template:
+    src: redis.j2
+    dest: /etc/redis.conf
+    owner: redis
+    group: redis
+  notify: Ensure redis is running
+
+- name: Modify user redis
+  user:
+    name: redis
+    groups: root
+
+- name: Noti hieult on Telegram
+  telegram:  token=bot181958319:AAHj1zsUiV23tMlkJuM6hrxhfMs7Y2k-JwM
+    chat_id=51588744
+    msg='{{ inventory_hostname }} - Redis - Ansible role finished'

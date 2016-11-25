@@ -1,0 +1,6 @@
+---
+- name: Ensure redis is running
+  service:
+    name: redis
+    state: started
+    enabled: yes

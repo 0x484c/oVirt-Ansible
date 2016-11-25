@@ -1,0 +1,43 @@
+---
+- name: Install sshpass
+  yum:
+    name: sshpass
+    enablerepo: remi
+    state: present
+  ignore_errors: yes
+
+- name: Create .ssh folder
+  file:
+    path: /root/.ssh
+    state: directory
+  notify: Restart SSH config
+
+- name: Create file config
+  file:
+    path: /root/.ssh/config
+    state: touch
+    mode: 0400
+
+- name: SSH config
+  template:
+    src: config.j2
+    dest: /root/.ssh/config
+  notify: Restart SSH config
+
+- name: Flush handlers
+  meta: flush_handlers
+
+- name: Create a 2048-bit SSH key for user root in ~/.ssh/id_rsa
+  user:
+    name: root
+    generate_ssh_key: yes
+    ssh_key_bits: 2048
+    ssh_key_file: .ssh/id_rsa
+
+- name: Run ssh-copy-id to copy id_rsa.pub to web2
+  shell: sshpass -p '{{ ansible_ssh_pass }}' ssh-copy-id -i ~/.ssh/id_rsa.pub root@web2
+
+- name: Noti hieult on Telegram
+  telegram:  token=bot181958319:AAHj1zsUiV23tMlkJuM6hrxhfMs7Y2k-JwM
+    chat_id=51588744
+    msg='{{ inventory_hostname }} - Lsyncd - Ansible role finished'

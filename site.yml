@@ -1,0 +1,37 @@
+---
+- name: Create a RHEV based VM
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  roles:
+    - createvm
+
+- name: Config common
+  hosts: haweb
+  roles:
+    - common
+
+- name: Config SSH without password
+  hosts: web1
+  roles:
+    - lsyncd
+
+- name: Config web server
+  hosts: web
+  roles:
+    - nginx
+    - php-fpm
+    - csync2
+    - keepalived
+    - haproxy
+
+- name: Config DB server
+  hosts: db
+  roles:
+    - mariadb
+    - redis
+
+- name: Config redis-sentinel
+  hosts: web2
+  roles:
+    - redis-sentinel

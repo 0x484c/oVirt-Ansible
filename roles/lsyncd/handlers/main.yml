@@ -1,0 +1,6 @@
+---
+- name: Restart SSH config
+  service:
+    name: sshd
+    state: restarted
+    enabled: yes

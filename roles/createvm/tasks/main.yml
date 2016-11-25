@@ -1,0 +1,73 @@
+---
+    - name: Obtain SSO token with using username/password credentials
+      no_log: true
+      ovirt_auth:
+        url: https://engine.ovirt.local/ovirt-engine/api
+        username: admin@internal
+        ca_file: /etc/pki/ovirt-engine/apache-ca.pem
+        password: 123456
+
+    - name: Creates and run VM with cloud init
+      ovirt_vms:
+        auth: "{{ ovirt_auth }}"
+        name: "{{ item.name }}"
+        template: cent6temp1
+        cluster: Default
+        memory: 1GiB
+        nics:
+        - name: nic1
+          profile_name: ovirtmgmt
+          interface: virtio
+        - name: nic2
+          profile_name: ovirtmgmt
+          interface: virtio
+        high_availability: true
+        cloud_init:
+          nic_boot_protocol: static
+          nic_ip_address: "{{ item.ipadd }}"
+          nic_netmask: 255.255.255.0
+          nic_gateway: "{{ ipgw }}"
+          nic_name: eth0
+          nic_on_boot: true
+          host_name: "{{ item.name }}"
+          user_name: root
+          root_password: "123456"
+      with_items:
+      - { name: '{{ web1_hostname }}', ipadd: '{{ pub_web1_ipadd }}' }
+      - { name: '{{ web2_hostname }}', ipadd: '{{ pub_web2_ipadd }}' }
+      - { name: '{{ db1_hostname }}', ipadd: '{{ pub_db1_ipadd }}' }
+      - { name: '{{ db2_hostname }}', ipadd: '{{ pub_db2_ipadd }}' }
+
+    - name: Stop VM
+      ovirt_vms:
+        auth: "{{ ovirt_auth }}"
+        state: stopped
+        name: "{{ item.name }}"
+      with_items:
+      - { name: '{{ web1_hostname }}', ipadd: '{{ pub_web1_ipadd }}' }
+      - { name: '{{ web2_hostname }}', ipadd: '{{ pub_web2_ipadd }}' }
+      - { name: '{{ db1_hostname }}', ipadd: '{{ pub_db1_ipadd }}' }
+      - { name: '{{ db2_hostname }}', ipadd: '{{ pub_db2_ipadd }}' }
+      async: 1000
+      poll: 0
+
+    - name: Start VM
+      ovirt_vms:
+        auth: "{{ ovirt_auth }}"
+        state: running
+        name: "{{ item.name }}"
+      with_items:
+      - { name: '{{ web1_hostname }}', ipadd: '{{ pub_web1_ipadd }}' }
+      - { name: '{{ web2_hostname }}', ipadd: '{{ pub_web2_ipadd }}' }
+      - { name: '{{ db1_hostname }}', ipadd: '{{ pub_db1_ipadd }}' }
+      - { name: '{{ db2_hostname }}', ipadd: '{{ pub_db2_ipadd }}' }
+
+    - name: Always revoke the SSO token
+      ovirt_auth:
+        state: absent
+        ovirt_auth: "{{ ovirt_auth }}"
+
+    - name: Noti hieult on Telegram
+      telegram:  token=bot181958319:AAHj1zsUiV23tMlkJuM6hrxhfMs7Y2k-JwM
+        chat_id=51588744
+        msg='{{ inventory_hostname }} - Create VM task finished'

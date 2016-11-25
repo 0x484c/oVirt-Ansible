@@ -1,0 +1,6 @@
+---
+- name: Ensure redis is running
+  service:
+    name: redis-sentinel
+    state: started
+    enabled: yes

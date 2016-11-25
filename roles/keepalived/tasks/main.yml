@@ -1,0 +1,27 @@
+---
+- name: Install keepalived
+  yum:
+    name: keepalived
+    state: present
+  notify: Ensure keepalived is running
+
+- name: Copy keepalived file config
+  template:
+    src: keepalived.j2
+    dest: /etc/keepalived/keepalived.conf
+  notify: Ensure keepalived is running
+
+- name: Flush handler
+  meta: flush_handlers
+
+- name: Edit service to keepalived (haproxy => nginx)
+  replace:
+    dest: /etc/keepalived/keepalived.conf
+    regexp: "nginx"
+    replace: "haproxy"
+  notify: Ensure keepalived is running
+
+- name: Noti hieult on Telegram
+  telegram:  token=bot181958319:AAHj1zsUiV23tMlkJuM6hrxhfMs7Y2k-JwM
+    chat_id=51588744
+    msg='{{ inventory_hostname }} - Keepalived - Ansible role finished'

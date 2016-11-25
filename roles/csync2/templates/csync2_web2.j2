@@ -1,0 +1,10 @@
+nossl * *;
+group web
+{
+        host ({{ web1_hostname }});
+        host {{ web2_hostname }};
+        key /etc/csync2/csync2.key;
+        include /server/webdev/www/{{ domain_of_project }}/;
+        exclude *.log;
+        auto younger;
+}
